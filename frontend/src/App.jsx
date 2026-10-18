@@ -40,7 +40,10 @@ const Analytics = lazy(() => import("./pages/Analytics"));
 // Route 4: "/contact" — Lab Docs / Key Questions chunk
 const Contact = lazy(() => import("./pages/Contact"));
 
-// Route 5: Auth page — lazily loaded so login code is NOT in the initial bundle
+// Route 5: "/about" — Developer Profile chunk
+const About = lazy(() => import("./pages/About"));
+
+// Route 6: Auth page — lazily loaded so login code is NOT in the initial bundle
 const AuthView = lazy(() => import("./components/AuthView"));
 
 // ─────────────────────────────────────────────────────────────
@@ -142,6 +145,7 @@ function App() {
               <Route path="/projects" element={<Projects user={user} />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/about" element={<About user={user} />} />
               {/* Redirect any unknown auth'd route → home */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

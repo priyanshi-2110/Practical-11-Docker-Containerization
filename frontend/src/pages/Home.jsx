@@ -116,6 +116,9 @@ function Home({ user }) {
           <Link to="/analytics" className="btn btn-secondary" style={{ padding: "0.85rem 2rem", fontSize: "1rem" }}>
             View Analytics
           </Link>
+          <Link to="/about" className="btn btn-secondary" style={{ padding: "0.85rem 2rem", fontSize: "1rem" }}>
+            About Developer 👤
+          </Link>
         </div>
       </section>
 
@@ -270,6 +273,63 @@ const Contact   = lazy(() => import('./pages/Contact'));
               </pre>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ── Developer Profile Spotlight ─────────────────────── */}
+      <section style={{ marginTop: "3rem" }}>
+        <div
+          className="glass-card"
+          style={{
+            padding: "2rem 2.25rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: "1.75rem",
+            background: "linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(6, 182, 212, 0.08) 100%)",
+            border: "1px solid rgba(99, 102, 241, 0.25)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", flexWrap: "wrap", maxWidth: "750px" }}>
+            <div
+              style={{
+                width: "56px",
+                height: "56px",
+                borderRadius: "16px",
+                background: "linear-gradient(135deg, #6366f1, #06b6d4)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "1.35rem",
+                fontWeight: 800,
+                color: "#ffffff",
+                boxShadow: "0 8px 20px -4px rgba(99, 102, 241, 0.5)",
+                flexShrink: 0,
+              }}
+            >
+              PP
+            </div>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap", marginBottom: "0.25rem" }}>
+                <h3 style={{ fontSize: "1.15rem", fontWeight: 800 }}>Priyanshi Padshala</h3>
+                <span style={{ fontSize: "0.72rem", background: "rgba(99,102,241,0.2)", color: "#a5b4fc", padding: "2px 8px", borderRadius: "9999px", fontWeight: 700 }}>
+                  B.Tech IT · CHARUSAT
+                </span>
+              </div>
+              <p style={{ color: "var(--text-muted)", fontSize: "0.875rem", lineHeight: 1.55 }}>
+                Hands-on experience in software development, data analysis, machine learning, and AI-powered applications. Completed Practicals 6 through 10 in this repository.
+              </p>
+            </div>
+          </div>
+
+          <Link
+            to="/about"
+            className="btn btn-primary"
+            style={{ padding: "0.75rem 1.5rem", fontSize: "0.9rem" }}
+          >
+            View Full Profile →
+          </Link>
         </div>
       </section>
     </main>

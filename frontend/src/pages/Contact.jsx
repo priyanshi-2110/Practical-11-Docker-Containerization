@@ -1,187 +1,463 @@
-import React from "react";
+import React, { useState } from "react";
 
-// ─── Contact Page ─────────────────────────────────────────────
-// Lazily-loaded chunk: only downloaded when user navigates to /contact
+// ─── Contact Page (Lab Documentation) ─────────────────────────
+// Lazily-loaded chunk: downloaded when user navigates to /contact
+// Includes interactive documentation for Practical 11 (Docker & Docker Compose),
+// Practical 10 (Event-Driven Architecture), and Practical 8 (Lazy Loading).
 // ─────────────────────────────────────────────────────────────
 
 function Contact() {
-  const concepts = [
+  const [activeTab, setActiveTab] = useState("pr11"); // "pr11" | "pr10" | "pr8"
+
+  // ── Practical 11 Data ───────────────────────────────────────
+  const pr11Info = [
+    { label: "Practical", value: "Practical 11" },
+    { label: "CO / PO", value: "CO5 / PO3, PO5" },
+    { label: "Technology", value: "Docker & Docker Compose" },
+    { label: "Services", value: "3 (Frontend, Backend, MongoDB)" },
+    { label: "Bridge Network", value: "app-network" },
+    { label: "Data Persistence", value: "mongo-data (Named Volume)" },
+    { label: "Build Strategy", value: "Multi-Stage Dockerfile" },
+    { label: "One-Click Command", value: "docker-compose up --build" },
+  ];
+
+  const pr11Concepts = [
+    {
+      q: "Why does the backend container need to reference the MongoDB container by its service name (mongodb) rather than localhost?",
+      a: "In Docker, each container runs in its own network namespace with its own loopback interface (localhost / 127.0.0.1). If backend tries to connect to localhost:27017, it queries itself instead of MongoDB. When containers join a user-defined bridge network (app-network), Docker's embedded DNS server automatically resolves service names defined in docker-compose.yml (e.g. mongodb) to their dynamic container IP addresses.",
+      icon: "🌐",
+    },
+    {
+      q: "What is the difference between EXPOSE in a Dockerfile and the ports mapping in docker-compose.yml?",
+      a: "EXPOSE is primarily documentation and metadata — it tells Docker and users which port the container listens on, but does NOT publish the port to the host system. The ports directive in docker-compose.yml (e.g. 5000:5000) actively binds and forwards host machine ports to container ports, allowing outside traffic (like a web browser or Postman) to access the service.",
+      icon: "🔌",
+    },
+    {
+      q: "Why is it considered bad practice to copy node_modules into a Docker image instead of running npm install inside the container?",
+      a: "1) Native binary compatibility: packages like bcrypt compile OS-specific C++ binaries for the host (e.g. Windows win32); copying them into a Linux Alpine container causes 'invalid ELF header' crashes. 2) Build context bloat: copying massive node_modules folders slows down image building. 3) Consistency: running npm install inside the container ensures clean, deterministic dependencies built for the exact Linux environment.",
+      icon: "📦",
+    },
+  ];
+
+  const pr11Supplementary = [
+    {
+      title: "Supplementary 1: .dockerignore Optimization",
+      desc: "Created .dockerignore in both backend and frontend to exclude host node_modules, build directories, logs, and sensitive .env files from the build context.",
+      badge: "Completed",
+    },
+    {
+      title: "Supplementary 2: Multi-Stage Build for React Frontend",
+      desc: "Implemented a 2-stage Dockerfile: Stage 1 builds static assets using Node.js & Vite; Stage 2 copies only the production dist output to a lean runtime, minimizing image size.",
+      badge: "Completed",
+    },
+    {
+      title: "Supplementary 3: Named Volume for MongoDB Durability",
+      desc: "Configured mongo-data:/data/db in docker-compose.yml so that database collections and documents persist across container stops, restarts, and removals.",
+      badge: "Verified",
+    },
+  ];
+
+  // ── Practical 10 Data ───────────────────────────────────────
+  const pr10Info = [
+    { label: "Practical", value: "Practical 10" },
+    { label: "CO / PO", value: "CO4 / PO3, PO5" },
+    { label: "Core Pattern", value: "Node.js EventEmitter" },
+    { label: "Dependencies", value: "Native events (Zero external)" },
+    { label: "Events", value: "task-created, task-deleted, error" },
+    { label: "Client Response Time", value: "~18 ms (Instant)" },
+    { label: "Simulated Delay", value: "2000 ms (Non-blocking)" },
+    { label: "Decoupling", value: "Producer / Consumer Pattern" },
+  ];
+
+  const pr10Concepts = [
+    {
+      q: "Why does emitting an event not block the API response, even though both run on the same Node.js process?",
+      a: "Node.js operates on an event-driven, single-threaded Event Loop. When res.status(201).json(newTask) is invoked, the HTTP response headers and body are written to the TCP socket buffer immediately. The background event listener defers slow operations (via setTimeout or asynchronous I/O), offloading them to the Event Loop's timers queue. The main call stack completes the response cycle immediately in ~18ms, while the slow background handler runs later without delaying the client.",
+      icon: "⚡",
+    },
+    {
+      q: "What would happen to API response time if the notification logic were placed directly inside the POST route instead of in an event handler?",
+      a: "If the notification logic (such as an email send, webhook call, or our simulated 2-second delay) was called synchronously inside the POST route before sending the response, the client would remain blocked in a pending HTTP state for over 2,000ms (~2 seconds). This degrades user experience, increases server connection concurrency, and makes the UI feel sluggish.",
+      icon: "⏱️",
+    },
+    {
+      q: "Why is EventEmitter a reasonable choice for this scale of application, but not for a production system handling millions of events per day?",
+      a: "EventEmitter is built into Node.js, requires no external infrastructure (like RabbitMQ or Redis), runs entirely in-memory, and provides low-overhead decoupling for single-instance monoliths. However, at enterprise scale (millions of daily events): (1) In-memory events are lost if the process crashes (no persistence); (2) Events cannot cross process boundaries in a multi-instance/clustered environment; (3) It lacks rate-limiting, dead-letter queues, exponential backoff retries, and distributed consumer groups.",
+      icon: "🌐",
+    },
+  ];
+
+  // ── Practical 8 Data ────────────────────────────────────────
+  const pr8Info = [
+    { label: "Practical", value: "Practical 8" },
+    { label: "CO / PO", value: "CO1 / PO3, PO5" },
+    { label: "Technique", value: "React.lazy() + Suspense" },
+    { label: "Baseline Bundle", value: "225.27 kB" },
+    { label: "After Splitting", value: "Route Chunks" },
+    { label: "Chunk Strategy", value: "Route-based" },
+    { label: "Fallback UI", value: "PageLoader skeleton" },
+    { label: "Min Delay", value: "300ms (Analytics)" },
+  ];
+
+  const pr8Concepts = [
     {
       q: "What is the difference between the initial bundle and a lazy-loaded chunk?",
-      a: "The initial bundle (main.js) is downloaded and parsed immediately when the app first loads — it contains only the shell code needed to bootstrap React and the routing layer. A lazy-loaded chunk is a separate JS file that the browser only requests when the user navigates to that specific route. Until that navigation happens, the chunk bytes are never transferred, saving both bandwidth and CPU parse time on the first interaction.",
+      a: "The initial bundle (main.js) is downloaded and parsed immediately when the app first loads — it contains only the shell code needed to bootstrap React and routing. A lazy-loaded chunk is a separate JS file downloaded only when the user navigates to that route for the first time, saving bandwidth and CPU parse time.",
       icon: "📦",
     },
     {
       q: "Why does lazy loading improve perceived performance even though total code eventually stays the same?",
-      a: "Perceived performance is dominated by Time to Interactive (TTI) — the moment the user can first interact with the page. By splitting code into on-demand chunks, the initial bundle is smaller, parses faster, and the app becomes interactive sooner. Users rarely visit every route in a session, so many chunks may never be downloaded at all — reducing total bytes transferred in real usage scenarios.",
+      a: "Perceived performance is dominated by Time to Interactive (TTI). By splitting code into on-demand chunks, the initial bundle is smaller and parses faster. Users rarely visit every route in a session, so many chunks may never be downloaded at all.",
       icon: "⚡",
     },
     {
       q: "When would lazy loading NOT be worth the added complexity?",
-      a: "In very small apps (< 50 kB total JS), the overhead of extra HTTP round-trips for chunks may outweigh the bundle-splitting benefit. Also, if users visit every route immediately (e.g., a step-by-step wizard), all chunks are downloaded anyway. Finally, if the app runs behind a slow server with high latency, the chunk request delay may cause visible loading flicker — mitigated by the 300ms minimum-delay pattern we implemented in Analytics.jsx.",
+      a: "In tiny apps (< 50 kB total JS), the overhead of extra HTTP requests may outweigh bundle savings. Also, if users visit every screen sequentially (like a wizard) or on high-latency networks where chunk delays cause loading flashes.",
       icon: "🤔",
     },
   ];
 
-  const practicalInfo = [
-    { label: "Practical", value: "8" },
-    { label: "CO/PO", value: "CO1 / PO3, PO5" },
-    { label: "Technique", value: "React.lazy() + Suspense" },
-    { label: "Baseline Bundle", value: "225.27 kB" },
-    { label: "After Splitting", value: "Multiple chunks" },
-    { label: "Chunk Strategy", value: "Route-based" },
-    { label: "Fallback UI", value: "PageLoader component" },
-    { label: "Min Delay", value: "300ms (Analytics)" },
-  ];
-
   return (
-    <main style={{ maxWidth: "1000px", margin: "0 auto", padding: "2.5rem 1.5rem 5rem" }}>
-
+    <main style={{ maxWidth: "1050px", margin: "0 auto", padding: "2.5rem 1.5rem 5rem" }}>
       {/* ── Page Header ──────────────────────────────────── */}
-      <div style={{ marginBottom: "2.5rem" }}>
+      <div style={{ marginBottom: "2rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
           <span style={{ fontSize: "1.8rem" }}>📝</span>
           <h1 style={{ fontSize: "2rem", fontWeight: 800, letterSpacing: "-0.02em" }}>
-            Lab Documentation
+            Lab Documentation &amp; Analysis
           </h1>
         </div>
         <p style={{ color: "var(--text-muted)", fontSize: "0.95rem" }}>
-          Conceptual analysis questions, before/after metrics, and implementation notes for Practical 8.
-          This page is itself a{" "}
-          <span style={{ color: "#a5b4fc", fontWeight: 600 }}>lazy-loaded chunk</span> — it was not included in the initial bundle.
+          Comprehensive architectural explanations, container configs, and analysis questions for coursework practicals.
         </p>
       </div>
 
-      {/* ── Practical Info Table ─────────────────────────── */}
-      <section className="glass-card" style={{ padding: "1.5rem 2rem", marginBottom: "2.25rem" }}>
-        <h2 style={{ fontSize: "1.15rem", fontWeight: 800, marginBottom: "1.25rem" }}>
-          ⚙️ Implementation Reference
-        </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "0.75rem" }}>
-          {practicalInfo.map((item) => (
-            <div
-              key={item.label}
+      {/* ── Tab Switcher ─────────────────────────────────── */}
+      <div
+        style={{
+          display: "flex",
+          gap: "0.75rem",
+          marginBottom: "2rem",
+          background: "var(--bg-input)",
+          padding: "0.4rem",
+          borderRadius: "12px",
+          width: "fit-content",
+          border: "1px solid var(--border-subtle)",
+          flexWrap: "wrap",
+        }}
+      >
+        <button
+          onClick={() => setActiveTab("pr11")}
+          style={{
+            padding: "0.6rem 1.25rem",
+            borderRadius: "8px",
+            fontSize: "0.88rem",
+            fontWeight: 700,
+            cursor: "pointer",
+            border: "none",
+            transition: "all 0.2s ease",
+            background: activeTab === "pr11" ? "linear-gradient(135deg, #06b6d4, #0284c7)" : "transparent",
+            color: activeTab === "pr11" ? "#ffffff" : "var(--text-muted)",
+            boxShadow: activeTab === "pr11" ? "0 4px 12px rgba(6,182,212,0.3)" : "none",
+          }}
+        >
+          🐳 Practical 11: Docker &amp; Compose
+        </button>
+        <button
+          onClick={() => setActiveTab("pr10")}
+          style={{
+            padding: "0.6rem 1.25rem",
+            borderRadius: "8px",
+            fontSize: "0.88rem",
+            fontWeight: 700,
+            cursor: "pointer",
+            border: "none",
+            transition: "all 0.2s ease",
+            background: activeTab === "pr10" ? "linear-gradient(135deg, #6366f1, #4f46e5)" : "transparent",
+            color: activeTab === "pr10" ? "#ffffff" : "var(--text-muted)",
+            boxShadow: activeTab === "pr10" ? "0 4px 12px rgba(99,102,241,0.3)" : "none",
+          }}
+        >
+          🚀 Practical 10: Event-Driven Async
+        </button>
+        <button
+          onClick={() => setActiveTab("pr8")}
+          style={{
+            padding: "0.6rem 1.25rem",
+            borderRadius: "8px",
+            fontSize: "0.88rem",
+            fontWeight: 700,
+            cursor: "pointer",
+            border: "none",
+            transition: "all 0.2s ease",
+            background: activeTab === "pr8" ? "linear-gradient(135deg, #10b981, #059669)" : "transparent",
+            color: activeTab === "pr8" ? "#ffffff" : "var(--text-muted)",
+            boxShadow: activeTab === "pr8" ? "0 4px 12px rgba(16,185,129,0.3)" : "none",
+          }}
+        >
+          ⚡ Practical 8: Lazy Loading
+        </button>
+      </div>
+
+      {activeTab === "pr11" ? (
+        /* ══════════════════════════════════════════════════════
+           PRACTICAL 11 VIEW (DOCKER & COMPOSE)
+           ══════════════════════════════════════════════════════ */
+        <div className="animate-fade-in">
+          {/* Quick reference metrics */}
+          <section className="glass-card" style={{ padding: "1.5rem 2rem", marginBottom: "2.25rem" }}>
+            <h2 style={{ fontSize: "1.15rem", fontWeight: 800, marginBottom: "1.25rem" }}>
+              ⚙️ Practical 11 Specification Reference
+            </h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "0.75rem" }}>
+              {pr11Info.map((item) => (
+                <div
+                  key={item.label}
+                  style={{
+                    padding: "0.75rem 1rem",
+                    background: "var(--bg-input)",
+                    borderRadius: "8px",
+                    border: "1px solid var(--border-subtle)",
+                  }}
+                >
+                  <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.25rem" }}>
+                    {item.label}
+                  </div>
+                  <div style={{ fontWeight: 700, color: "var(--text-main)", fontFamily: "var(--font-mono)", fontSize: "0.88rem" }}>
+                    {item.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Architecture & Flow */}
+          <section className="glass-card" style={{ padding: "1.75rem 2rem", marginBottom: "2.25rem" }}>
+            <h2 style={{ fontSize: "1.15rem", fontWeight: 800, marginBottom: "1rem" }}>
+              🐳 Multi-Container Orchestration Architecture
+            </h2>
+            <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", lineHeight: 1.6, marginBottom: "1.25rem" }}>
+              All 3 services run on an isolated bridge network with service-name DNS discovery and persistent database volume mapping.
+            </p>
+
+            <pre
               style={{
-                padding: "0.75rem 1rem",
-                background: "var(--bg-input)",
-                borderRadius: "8px",
+                background: "rgba(0, 0, 0, 0.4)",
                 border: "1px solid var(--border-subtle)",
+                borderRadius: "10px",
+                padding: "1.25rem",
+                fontFamily: "var(--font-mono)",
+                fontSize: "0.82rem",
+                lineHeight: 1.65,
+                color: "#67e8f9",
+                overflowX: "auto",
               }}
             >
-              <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.25rem" }}>
-                {item.label}
-              </div>
-              <div style={{ fontWeight: 700, color: "var(--text-main)", fontFamily: "var(--font-mono)", fontSize: "0.9rem" }}>
-                {item.value}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+{`docker-compose.yml
+├── frontend (React 19 + Vite preview, port 5173:5173)
+├── backend  (Node/Express API, port 5000:5000)
+└── mongodb  (Official mongo:latest image, port 27017:27017)
+Network: app-network (bridge)
+Volume:  mongo-data (persistent named storage)
 
-      {/* ── Before / After Comparison ────────────────────── */}
-      <section style={{ marginBottom: "2.25rem" }}>
-        <h2 style={{ fontSize: "1.15rem", fontWeight: 800, marginBottom: "1.25rem" }}>
-          📊 Before / After Bundle Comparison
-        </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
-          <div
-            className="glass-card"
-            style={{ padding: "1.5rem", borderTop: "3px solid #f43f5e" }}
-          >
-            <p style={{ color: "#f43f5e", fontWeight: 800, fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "1rem" }}>
-              ❌ BEFORE — Single Bundle
-            </p>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.82rem", lineHeight: 1.8, color: "var(--text-muted)" }}>
-              <div>📄 <span style={{ color: "var(--text-main)" }}>index.html</span> — 0.45 kB</div>
-              <div>🎨 <span style={{ color: "var(--text-main)" }}>index-Xxx.css</span> — 3.96 kB</div>
-              <div>📦 <span style={{ color: "#fb7185", fontWeight: 700 }}>index-Xxx.js</span> — <strong style={{ color: "#fb7185" }}>225.27 kB</strong> (70.16 kB gz)</div>
-              <div style={{ marginTop: "0.75rem", color: "var(--text-dim)", fontSize: "0.78rem" }}>
-                All pages loaded upfront. Every route's code is bundled into one file and parsed before the user can interact.
-              </div>
-            </div>
-          </div>
-          <div
-            className="glass-card"
-            style={{ padding: "1.5rem", borderTop: "3px solid #10b981" }}
-          >
-            <p style={{ color: "#10b981", fontWeight: 800, fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "1rem" }}>
-              ✅ AFTER — Code Split
-            </p>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.82rem", lineHeight: 1.8, color: "var(--text-muted)" }}>
-              <div>📄 <span style={{ color: "var(--text-main)" }}>index.html</span> — 0.45 kB</div>
-              <div>📦 <span style={{ color: "#6ee7b7" }}>main.js</span> — <strong style={{ color: "#6ee7b7" }}>smaller shell</strong></div>
-              <div>📦 <span style={{ color: "#6ee7b7" }}>Home.chunk.js</span> — loaded at /</div>
-              <div>📦 <span style={{ color: "#6ee7b7" }}>Projects.chunk.js</span> — loaded at /projects</div>
-              <div>📦 <span style={{ color: "#6ee7b7" }}>Analytics.chunk.js</span> — loaded at /analytics</div>
-              <div>📦 <span style={{ color: "#6ee7b7" }}>Contact.chunk.js</span> — loaded at /contact</div>
-              <div style={{ marginTop: "0.75rem", color: "var(--text-dim)", fontSize: "0.78rem" }}>
-                Each chunk only downloaded when its route is first visited. Faster TTI.
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+Orchestration Command:
+$ docker-compose up --build`}
+            </pre>
+          </section>
 
-      {/* ── Key Questions ────────────────────────────────── */}
-      <section>
-        <h2 style={{ fontSize: "1.15rem", fontWeight: 800, marginBottom: "1.25rem" }}>
-          🎯 Key Analysis Questions
-        </h2>
-        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-          {concepts.map((c, i) => (
-            <div
-              key={i}
-              className="glass-card"
-              style={{ padding: "1.5rem 1.75rem", borderLeft: "3px solid #6366f1" }}
-            >
-              <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem" }}>
-                <span style={{ fontSize: "1.5rem", flexShrink: 0, marginTop: "2px" }}>{c.icon}</span>
-                <div>
-                  <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: "0.65rem", color: "var(--text-main)" }}>
-                    Q{i + 1}: {c.q}
-                  </h3>
-                  <p style={{ color: "var(--text-muted)", fontSize: "0.875rem", lineHeight: 1.65 }}>
-                    {c.a}
-                  </p>
+          {/* Key Analysis Questions */}
+          <section style={{ marginBottom: "2.25rem" }}>
+            <h2 style={{ fontSize: "1.15rem", fontWeight: 800, marginBottom: "1.25rem" }}>
+              🎯 Key Analysis Questions
+            </h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              {pr11Concepts.map((c, i) => (
+                <div
+                  key={i}
+                  className="glass-card"
+                  style={{ padding: "1.5rem 1.75rem", borderLeft: "3px solid #06b6d4" }}
+                >
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem" }}>
+                    <span style={{ fontSize: "1.5rem", flexShrink: 0, marginTop: "2px" }}>{c.icon}</span>
+                    <div>
+                      <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: "0.65rem", color: "var(--text-main)" }}>
+                        Q{i + 1}: {c.q}
+                      </h3>
+                      <p style={{ color: "var(--text-muted)", fontSize: "0.875rem", lineHeight: 1.65 }}>
+                        {c.a}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </section>
+          </section>
 
-      {/* ── Student Info Section ─────────────────────────── */}
-      <section
-        className="glass-card"
-        style={{ marginTop: "2.25rem", padding: "1.75rem 2rem" }}
-      >
-        <h2 style={{ fontSize: "1.1rem", fontWeight: 800, marginBottom: "1rem" }}>
-          🎓 Lab Reflection
-        </h2>
-        <div style={{ color: "var(--text-muted)", fontSize: "0.875rem", lineHeight: 1.75 }}>
-          <p style={{ marginBottom: "0.75rem" }}>
-            <strong style={{ color: "var(--text-main)" }}>Errors encountered &amp; explained:</strong>{" "}
-            During implementation, the most common error was attempting to use named exports with{" "}
-            <code>React.lazy()</code>, which only works with <em>default exports</em>.
-            Each page component must have <code>export default ComponentName</code> at the bottom — not just a named export —
-            or Vite will throw <em>"Element type is invalid"</em> at runtime.
-          </p>
-          <p style={{ marginBottom: "0.75rem" }}>
-            <strong style={{ color: "var(--text-main)" }}>Fallback observation:</strong>{" "}
-            On fast local connections the fallback UI flashes too quickly to observe.
-            Throttling to <em>Slow 3G</em> in DevTools Network tab (or the 300ms minimum delay in Analytics.jsx)
-            makes the <code>PageLoader</code> skeleton visibly render before the chunk arrives.
-          </p>
-          <p>
-            <strong style={{ color: "var(--text-main)" }}>Unnecessary re-render identified:</strong>{" "}
-            Using React DevTools Profiler, the <code>Navbar</code> component was re-rendering on every task
-            CRUD operation even though it only depends on <code>user</code> state.
-            This was resolved by ensuring the <code>user</code> and <code>onLogout</code> props are stable references
-            (no inline object/function creation on each render in App.jsx).
-          </p>
+          {/* Supplementary Problems */}
+          <section className="glass-card" style={{ padding: "1.75rem 2rem" }}>
+            <h2 style={{ fontSize: "1.15rem", fontWeight: 800, marginBottom: "1.25rem" }}>
+              🧩 Supplementary Problems Addressed
+            </h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              {pr11Supplementary.map((item, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    padding: "1rem 1.25rem",
+                    background: "var(--bg-input)",
+                    borderRadius: "10px",
+                    border: "1px solid var(--border-subtle)",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    gap: "1rem",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <div style={{ maxWidth: "720px" }}>
+                    <h3 style={{ fontSize: "0.92rem", fontWeight: 700, color: "var(--text-main)", marginBottom: "0.35rem" }}>
+                      {item.title}
+                    </h3>
+                    <p style={{ fontSize: "0.84rem", color: "var(--text-muted)", lineHeight: 1.55 }}>
+                      {item.desc}
+                    </p>
+                  </div>
+                  <span
+                    style={{
+                      fontSize: "0.7rem",
+                      fontWeight: 700,
+                      background: "rgba(6, 182, 212, 0.15)",
+                      color: "#38bdf8",
+                      padding: "0.25rem 0.65rem",
+                      borderRadius: "9999px",
+                      border: "1px solid rgba(6, 182, 212, 0.3)",
+                      flexShrink: 0,
+                    }}
+                  >
+                    ✓ {item.badge}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
-      </section>
+      ) : activeTab === "pr10" ? (
+        /* ══════════════════════════════════════════════════════
+           PRACTICAL 10 VIEW
+           ══════════════════════════════════════════════════════ */
+        <div className="animate-fade-in">
+          <section className="glass-card" style={{ padding: "1.5rem 2rem", marginBottom: "2.25rem" }}>
+            <h2 style={{ fontSize: "1.15rem", fontWeight: 800, marginBottom: "1.25rem" }}>
+              ⚙️ Practical 10 Specification Reference
+            </h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "0.75rem" }}>
+              {pr10Info.map((item) => (
+                <div
+                  key={item.label}
+                  style={{
+                    padding: "0.75rem 1rem",
+                    background: "var(--bg-input)",
+                    borderRadius: "8px",
+                    border: "1px solid var(--border-subtle)",
+                  }}
+                >
+                  <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.25rem" }}>
+                    {item.label}
+                  </div>
+                  <div style={{ fontWeight: 700, color: "var(--text-main)", fontFamily: "var(--font-mono)", fontSize: "0.88rem" }}>
+                    {item.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section style={{ marginBottom: "2.25rem" }}>
+            <h2 style={{ fontSize: "1.15rem", fontWeight: 800, marginBottom: "1.25rem" }}>
+              🎯 Key Analysis Questions
+            </h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              {pr10Concepts.map((c, i) => (
+                <div
+                  key={i}
+                  className="glass-card"
+                  style={{ padding: "1.5rem 1.75rem", borderLeft: "3px solid #6366f1" }}
+                >
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem" }}>
+                    <span style={{ fontSize: "1.5rem", flexShrink: 0, marginTop: "2px" }}>{c.icon}</span>
+                    <div>
+                      <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: "0.65rem", color: "var(--text-main)" }}>
+                        Q{i + 1}: {c.q}
+                      </h3>
+                      <p style={{ color: "var(--text-muted)", fontSize: "0.875rem", lineHeight: 1.65 }}>
+                        {c.a}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      ) : (
+        /* ══════════════════════════════════════════════════════
+           PRACTICAL 8 VIEW
+           ══════════════════════════════════════════════════════ */
+        <div className="animate-fade-in">
+          <section className="glass-card" style={{ padding: "1.5rem 2rem", marginBottom: "2.25rem" }}>
+            <h2 style={{ fontSize: "1.15rem", fontWeight: 800, marginBottom: "1.25rem" }}>
+              ⚙️ Practical 8 Implementation Reference
+            </h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "0.75rem" }}>
+              {pr8Info.map((item) => (
+                <div
+                  key={item.label}
+                  style={{
+                    padding: "0.75rem 1rem",
+                    background: "var(--bg-input)",
+                    borderRadius: "8px",
+                    border: "1px solid var(--border-subtle)",
+                  }}
+                >
+                  <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--text-dim)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.25rem" }}>
+                    {item.label}
+                  </div>
+                  <div style={{ fontWeight: 700, color: "var(--text-main)", fontFamily: "var(--font-mono)", fontSize: "0.9rem" }}>
+                    {item.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section>
+            <h2 style={{ fontSize: "1.15rem", fontWeight: 800, marginBottom: "1.25rem" }}>
+              🎯 Key Analysis Questions
+            </h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              {pr8Concepts.map((c, i) => (
+                <div
+                  key={i}
+                  className="glass-card"
+                  style={{ padding: "1.5rem 1.75rem", borderLeft: "3px solid #10b981" }}
+                >
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: "1rem" }}>
+                    <span style={{ fontSize: "1.5rem", flexShrink: 0, marginTop: "2px" }}>{c.icon}</span>
+                    <div>
+                      <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: "0.65rem", color: "var(--text-main)" }}>
+                        Q{i + 1}: {c.q}
+                      </h3>
+                      <p style={{ color: "var(--text-muted)", fontSize: "0.875rem", lineHeight: 1.65 }}>
+                        {c.a}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
     </main>
   );
 }

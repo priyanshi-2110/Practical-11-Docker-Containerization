@@ -14,6 +14,7 @@ function Navbar({ user, onLogout }) {
     { to: "/projects", label: "Tasks" },
     { to: "/analytics", label: "Analytics" },
     { to: "/contact", label: "Docs" },
+    { to: "/about", label: "About" },
   ];
 
   return (

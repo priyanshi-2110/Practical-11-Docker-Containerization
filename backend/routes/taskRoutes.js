@@ -70,9 +70,9 @@ router.post("/", authMiddleware, validateTask, async (req, res, next) => {
 
     console.log(`[API] Response sent at ${new Date().toISOString()}`);
     res.status(201).json(newTask);
-    
-    // Emit event asynchronously AFTER response
-    taskEvents.emit('task-created', newTask);
+
+    // Emit event asynchronously AFTER response (passes task and assigned user)
+    taskEvents.emit('task-created', newTask, req.user);
   } catch (error) {
     next(error);
   }
@@ -130,8 +130,8 @@ router.delete("/:id", authMiddleware, async (req, res, next) => {
       task
     });
 
-    // Emit event asynchronously AFTER response
-    taskEvents.emit('task-deleted', req.params.id);
+    // Emit event asynchronously AFTER response (passes taskId and initiating user)
+    taskEvents.emit('task-deleted', req.params.id, req.user);
   } catch (error) {
     next(error);
   }

@@ -1,0 +1,65 @@
+# ============================================================
+# Practical 11: Multi-Container Docker Compose Orchestration
+# Services: frontend (React), backend (Express), mongodb (Mongo)
+# Network: app-network (bridge)
+# Volumes: mongo-data (named volume for persistent storage)
+# ============================================================
+
+services:
+  # ── Database Service: MongoDB ──────────────────────────────
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=taskmanager
+    volumes:
+      # Named volume ensures data persists across container restarts (Supplementary Problem 3)
+      - mongo-data:/data/db
+    networks:
+      - app-network
+
+  # ── Backend API Service: Node.js & Express ─────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: task-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      # Uses the Docker service name 'mongodb' instead of 'localhost' (Step 5)
+      - MONGO_URI=mongodb://mongodb:27017/taskmanager
+      - JWT_SECRET=supersecretjwtsecretkey_practical7_2026
+    depends_on:
+      - mongodb
+    networks:
+      - app-network
+
+  # ── Frontend Web Service: React & Vite ─────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: task-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+# ── Persistent Storage Volumes ───────────────────────────────
+volumes:
+  mongo-data:
+    driver: local
+
+# ── Isolated Internal Bridge Network ─────────────────────────
+networks:
+  app-network:
+    driver: bridge

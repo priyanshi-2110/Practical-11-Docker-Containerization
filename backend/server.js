@@ -28,14 +28,16 @@ app.use((req, res, next) => {
 // ========================================
 // Connect to MongoDB
 // ========================================
-mongoose
-    .connect(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/taskmanager")
-    .then(() => {
-        console.log("MongoDB connected successfully");
-    })
-    .catch((err) => {
-        console.error("MongoDB connection error:", err);
-    });
+if (process.env.NODE_ENV !== "test") {
+    mongoose
+        .connect(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/taskmanager")
+        .then(() => {
+            console.log("MongoDB connected successfully");
+        })
+        .catch((err) => {
+            console.error("MongoDB connection error:", err);
+        });
+}
 
 // ========================================
 // Health / Root Route
@@ -105,6 +107,10 @@ app.use((err, req, res, next) => {
 // ========================================
 // Start server
 // ========================================
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== "test") {
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+}
+
+module.exports = app;
